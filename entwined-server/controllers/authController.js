@@ -29,6 +29,7 @@ const createRefreshToken = (user) => {
 
 const signup = async (req, res) => {
   try {
+    console.log("🔐 [SIGNUP] Received signup request:", req.body);
     const { username, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -181,7 +182,46 @@ const login = async (req, res) => {
         username: user.username,
         email: user.email,
       },
+<<<<<<< HEAD
     });
+=======
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* ================= RESEND VERIFICATION EMAIL ================= */
+const resendverification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (user.isVerified)
+      return res.status(400).json({ message: "Email is already verified" });
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${rawToken}`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "Verify your email",
+      html: `<a href="${verificationUrl}">${verificationUrl}</a>`,
+    });
+
+    res.json({ message: "Verification email sent" });
+>>>>>>> dc5ba42942924184ae13ab528d32613d13a99e9f
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
